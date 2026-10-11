@@ -126,6 +126,11 @@ function check(label, ok, detail) {
                 /* 🔊 按鈕存在（不按下：線上不要發出聲音、也不要觸發語音合成） */
                 const speak = await browser.evaluate(`return document.querySelectorAll('#vocabList [data-action="speak"]').length;`);
                 check('生字卡有 🔊 按鈕', speak > 0 || vocab.cards === 0, speak);
+                /* v0.13.1：v0.13.0 的兩個新東西也要在正式站真的存在（☆ 我的清單／列印學習單選項） */
+                const stars = await browser.evaluate(`return document.querySelectorAll('#vocabList .star-btn').length;`);
+                check('生字卡有 ☆ 收藏鈕（F-5 我的清單）', stars > 0 || vocab.cards === 0, stars);
+                const workshop = await browser.evaluate(`return ['printBlankZh','printAlpha','myListBtn','missingZhToggle'].every((id) => Boolean(document.getElementById(id)));`);
+                check('列印學習單與學生端篩選的控制項都在（B-9／F-5）', workshop === true);
             } else {
                 console.log('  ⏭ 目錄沒有單元，跳過生字表檢查');
             }
