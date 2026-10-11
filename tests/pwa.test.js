@@ -90,3 +90,25 @@ test('F-2：Service Worker 絕不快取 API，而且只在安全來源註冊', (
     assert.match(app, /navigator\.serviceWorker\.register\('\/sw\.js'\)/);
     assert.match(app, /window\.isSecureContext/, '只在安全來源註冊（瀏覽器規定）');
 });
+
+test('v0.14.2：Service Worker 的失敗路徑一定要回「真正的回應」，不可以往外丟錯誤', () => {
+    /* 真機症狀（使用者的 iPhone）：重新載入時 Safari 只顯示
+     * 「FetchEvent.respondWith received an error: TypeError: Load failed」——
+     * 因為舊版在「網路失敗 + 快取沒命中」時 throw，respondWith 收到 rejected promise。
+     * 這一組測試把「永遠有畫面可看」變成可驗證的事實。 */
+    assert.ok(!/throw err;/.test(sw),
+        'sw.js 不可以在 fetch handler 裡把錯誤往外丟（respondWith 會失敗、使用者只看到錯誤頁）');
+    assert.match(sw, /function offlineResponse\(/, '要有離線頁函式');
+    assert.match(sw, /return cached \|\| offlineResponse\(\)/,
+        'networkFirst 的失敗路徑要先試快取、最後回離線頁');
+    assert.match(sw, /new Response\('', \{ status: 504/, 'cacheFirst 失敗時要回 504 而不是丟錯');
+    assert.match(sw, /連不上網路|No network connection/, '離線頁要給人看得懂的說明');
+});
+
+test('v0.14.2：離線頁本身不依賴任何外部資源（沒有網路時才看得到它）', () => {
+    const offline = sw.slice(sw.indexOf('function offlineResponse'));
+    assert.ok(!/<script/i.test(offline), '離線頁不可以引用外部 script');
+    assert.ok(!/<link/i.test(offline), '離線頁不可以引用外部樣式表');
+    assert.match(offline, /<style>/, '樣式要內嵌（這個回應沒有加 CSP，行內樣式是安全的）');
+    assert.match(offline, /location\.reload\(\)/, '要有一個「重新載入」的按鈕');
+});

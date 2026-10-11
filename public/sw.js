@@ -14,7 +14,7 @@
  * ★ 改版時一定要改 CACHE_VERSION（`tests/pwa.test.js` 會檢查它與 package.json 的版本一致，
  *   忘記改的話測試會紅 —— 那正是「Service Worker 卡住舊版」這個經典問題的守門）。
  */
-const CACHE_VERSION = '0.14.1';
+const CACHE_VERSION = '0.14.2';
 const CACHE_NAME = `gary-dictionary-shell-${CACHE_VERSION}`;
 
 /* 預先快取「應用外殼」：離線時要能開起來的最小集合（頁面 ＋ 樣式 ＋ 主要腳本 ＋ 圖示）。
@@ -64,6 +64,43 @@ self.addEventListener('activate', (event) => {
     })());
 });
 
+/* 離線／失敗時的最後一道防線：一定要回一個「真正的回應」。
+ * ★ v0.14.2（真機症狀）：使用者重新載入時 Safari 只顯示
+ *   「FetchEvent.respondWith received an error: TypeError: Load failed」——
+ *   因為舊版在「網路失敗 + 快取也沒命中」時把錯誤往外丟，respondWith 收到 rejected promise，
+ *   瀏覽器就沒有畫面可顯示（連一句「沒有網路」都看不到）。
+ *   現在一律回一個看得懂的離線頁（503），永遠不讓 respondWith 失敗。
+ * ★ 這個頁面沒有加 CSP 標頭，所以用行內樣式是安全的（一般頁面仍由 Express 的嚴格 CSP 保護）。 */
+function offlineResponse() {
+    const html = `<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>暫時沒有網路 — Gary-Dictionary</title>
+<style>
+    body { margin: 0; padding: 2rem 1.25rem; font-family: -apple-system, "Helvetica Neue", "PingFang TC", sans-serif;
+           line-height: 1.7; color: #1d1d1f; background: #f5f5f7; }
+    h1 { font-size: 1.15rem; margin: 0 0 0.5rem; }
+    p { margin: 0 0 0.75rem; color: #515154; }
+    button { font: inherit; padding: 0.6rem 1rem; border-radius: 999px; border: 1px solid #0071e3;
+             background: #0071e3; color: #fff; }
+    .en { color: #86868b; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+    <h1>暫時沒有網路</h1>
+    <p>這個裝置現在連不上網路，而且這一頁還沒有存到離線快取。</p>
+    <p class="en">No network connection, and this page has not been saved for offline use yet.</p>
+    <button onclick="location.reload()">重新載入 / Reload</button>
+</body>
+</html>`;
+    return new Response(html, {
+        status: 503,
+        headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }
+    });
+}
+
 async function networkFirst(request) {
     const cache = await caches.open(CACHE_NAME);
     try {
@@ -71,12 +108,9 @@ async function networkFirst(request) {
         if (response && response.ok) cache.put(request, response.clone());
         return response;
     } catch (err) {
-        const cached = await cache.match(request);
-        if (cached) return cached;
-        /* 離線又沒有這一頁的快取 → 至少把首頁外殼端出去（應用會自己顯示「沒有網路」的提示） */
-        const shell = await cache.match('/');
-        if (shell) return shell;
-        throw err;
+        /* 網路失敗 → 先看這一頁的快取，再看首頁外殼，最後給離線頁。絕不把錯誤往外丟。 */
+        const cached = (await cache.match(request)) || (await cache.match('/'));
+        return cached || offlineResponse();
     }
 }
 
@@ -84,9 +118,15 @@ async function cacheFirst(request) {
     const cache = await caches.open(CACHE_NAME);
     const cached = await cache.match(request);
     if (cached) return cached;
-    const response = await fetch(request);
-    if (response && response.ok) cache.put(request, response.clone());
-    return response;
+    try {
+        const response = await fetch(request);
+        if (response && response.ok) cache.put(request, response.clone());
+        return response;
+    } catch (err) {
+        /* 靜態資源抓不到（離線）→ 回 504 而不是讓 respondWith 失敗。
+         * 畫面本來就缺這個資源，但至少整頁不會變成錯誤頁。 */
+        return new Response('', { status: 504, statusText: 'Offline' });
+    }
 }
 
 self.addEventListener('fetch', (event) => {
