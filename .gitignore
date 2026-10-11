@@ -15,3 +15,9 @@ backups/
 .DS_Store
 * [0-9].*
 * [0-9]
+
+# 安全掃描報告（v0.13.1）：報告裡會有完整的請求和回應，可能含憑證 → 一律不進版控
+*ZAP-Report*.html
+zap-report*.html
+*ZAP-Report*.xml
+*ZAP-Report*.json

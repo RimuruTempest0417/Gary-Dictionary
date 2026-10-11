@@ -14,6 +14,14 @@
                     "value": "https://gary-dictionary-mylearning.vercel.app"
                 },
                 {
+                    "key": "X-Content-Type-Options",
+                    "value": "nosniff"
+                },
+                {
+                    "key": "Content-Security-Policy",
+                    "value": "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+                },
+                {
                     "key": "Cross-Origin-Resource-Policy",
                     "value": "same-origin"
                 },
@@ -24,11 +32,19 @@
             ]
         },
         {
-            "source": "/(favicon.ico|manifest.json|robots.txt)",
+            "source": "/(robots.txt|sitemap.xml|favicon.ico|favicon.svg|manifest.json)",
             "headers": [
                 {
                     "key": "Access-Control-Allow-Origin",
                     "value": "https://gary-dictionary-mylearning.vercel.app"
+                },
+                {
+                    "key": "X-Content-Type-Options",
+                    "value": "nosniff"
+                },
+                {
+                    "key": "Content-Security-Policy",
+                    "value": "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
                 },
                 {
                     "key": "Cross-Origin-Resource-Policy",

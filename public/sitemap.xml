@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Gary-Dictionary 的網站地圖（v0.13.1 起提供；以前這個路徑是 404）
+     這是一個單頁應用：年級／單元都在同一個網址裡用前端切換，所以只有一個入口需要列。
+     另外三個舊網域（gary-dictionary-mylearning／pv-dictionary／pv-dictionary-mylearning）
+     是同一份部署的別名，不重複列出，避免搜尋引擎看到重複內容。 -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>https://gary-dictionary.vercel.app/</loc>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+    </url>
+</urlset>
