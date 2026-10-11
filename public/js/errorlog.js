@@ -82,6 +82,10 @@
             const target = event.target;
             if (target && target !== window && target.tagName) {
                 const url = String(target.src || target.href || '');
+                /* ★ v0.13.2：沒有網址的載入事件沒有任何可追查的資訊
+                 *（通常是瀏覽器外掛注入的 <style>；發版檢查曾連續收到兩筆「STYLE failed to load:」空網址記錄）
+                 * ——記錄它只會製造噪音，直接跳過。有網址的才記（那才查得出是哪個資產）。 */
+                if (!url) return;
                 report('ASSET_LOAD', `${target.tagName} failed to load: ${url.split('?')[0]}`, {
                     tags: target.tagName
                 });

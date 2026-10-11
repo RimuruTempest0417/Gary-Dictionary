@@ -92,6 +92,9 @@
             'guide.myList.title': 'Students: my own list',
             'guide.myList.s1': 'Tap ☆ on any word to keep it in “My list”. It is saved in your own browser — no account needed.',
             'guide.myList.s2': 'Press “My list” to see only your saved words in the unit you are reading. It is stored on this device only, so it will not follow you to another phone or survive clearing your browser data.',
+            /* v0.13.2：手機上往下滑會收起頂部那一列（使用者指定） */
+            'guide.mobileScroll.title': 'On a phone: more room for words',
+            'guide.mobileScroll.s1': 'On a phone the top bar (Help, theme, text size, language, sign in) hides itself when you scroll down, so the word list gets the whole screen. Scroll back up (or return to the top of the page) and it comes back.',
             'guide.button': '❓ Help',
             'guide.title': '❓ How to use',
             'guide.print': '🖨 Print',
@@ -709,6 +712,9 @@
             'guide.myList.title': '學生：我的清單',
             'guide.myList.s1': '點任何一列的 ☆ 就能把生字收進「我的清單」；存在你自己的瀏覽器裡，不用帳號。',
             'guide.myList.s2': '按「我的清單」只顯示你在這個單元收藏的字。因為存在這台裝置，換手機或清掉瀏覽器資料就不會跟著走。',
+            /* v0.13.2：手機上往下滑會收起頂部那一列（使用者指定） */
+            'guide.mobileScroll.title': '手機上：把畫面留給生字',
+            'guide.mobileScroll.s1': '手機上往下滑時，最上面那一列（說明／主題／字級／語言／登入）會自動收起來，生字表就有整個畫面可以用；往上滑、或回到頁面最上面，它就會再出現。',
             'guide.button': '❓ 使用說明',
             'guide.title': '❓ 使用說明',
             'guide.print': '🖨 列印',

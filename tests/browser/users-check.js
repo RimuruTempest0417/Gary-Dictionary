@@ -558,6 +558,61 @@ async function main() {
         `);
         check('窄螢幕時表格自己在框內橫向捲動（不是把整頁撐開）',
             usersWrapInfo.has && usersWrapInfo.scrollWidth > usersWrapInfo.clientWidth, JSON.stringify(usersWrapInfo));
+
+        /* ★ v0.13.2：使用者回報「登入後手機上 Sign out 凸出去」。
+         * 這個矩陣就是他的要求：**中英 × 兩種字級 × 兩種手機寬度** 全部不能溢出。
+         * 為什麼舊的檢查抓不到：它只測了 402px／英文／標準字級 ——
+         * 中文標籤（登出／管理／網頁管理員）與 A+ 都會讓頂部按鈕變寬。 */
+        const matrix = [];
+        for (const lang of ['zh', 'en']) {
+            for (const font of ['m', 'l']) {
+                /* 280＝比 iPhone SE 更窄的極限；320＝iPhone SE／360＝Android 最小；375／402 主流 iPhone */
+                for (const w of [280, 320, 360, 375, 402]) matrix.push({ lang, font, w });
+            }
+        }
+        /* 再加一組「身分標籤特別長」的極限：真實帳號的顯示名稱可能比示範資料長很多
+         * （例如「陳大文老師（英文科）」）——這裡直接改 DOM 的文字來量版面，不改資料。 */
+        matrix.push({ lang: 'zh', font: 'l', w: 320, longName: true });
+        matrix.push({ lang: 'en', font: 'l', w: 320, longName: true });
+        for (const combo of matrix) {
+            await browser.evaluate(`document.querySelector('#langSwitch [data-lang="${combo.lang}"]').click();
+                document.querySelector('#fontSwitch [data-font-value="${combo.font}"]').click(); return true;`);
+            await browser.setViewport(combo.w, 874, true);
+            /* 超長身分標籤：直接在 DOM 上換字（不改任何資料），量完會還原 */
+            await browser.evaluate(`(() => {
+                const chip = document.querySelector('.topbar .user-chip');
+                if (!chip) return true;
+                if (${combo.longName ? 'true' : 'false'}) {
+                    if (!chip.dataset.orig) chip.dataset.orig = chip.innerHTML;
+                    chip.children[0].textContent = '陳大文老師（英文科主任）';
+                    if (chip.children[1]) chip.children[1].textContent = 'English Panel Head and Class Representative';
+                } else if (chip.dataset.orig) {
+                    /* 還原成我們自己剛才從 DOM 讀出來的原字串（不是外部輸入、也沒經過網路）→ 無 XSS 疑慮 */
+                    chip.innerHTML = chip.dataset.orig;
+                    delete chip.dataset.orig;
+                }
+                return true;
+            })()`);
+            await sleep(350);
+            const info = await browser.evaluate(`
+                const bar = document.querySelector('.topbar');
+                const rects = [...bar.querySelectorAll('button, .user-chip')].map((n) => n.getBoundingClientRect());
+                const outside = rects.filter((r) => r.width > 0 && (r.right > window.innerWidth + 1 || r.left < -1)).length;
+                const logout = document.getElementById('logoutBtn');
+                const r = logout ? logout.getBoundingClientRect() : null;
+                return {
+                    overflow: document.documentElement.scrollWidth - window.innerWidth,
+                    outside,
+                    logout: r ? { right: Math.round(r.right), width: Math.round(r.width) } : null
+                };`);
+            const tag = `${combo.lang === 'zh' ? '中文' : '英文'}／字級${combo.font === 'l' ? 'A+' : 'A'}／${combo.w}px`;
+            check(`登入後 ${tag}：整頁不橫向溢出`, info.overflow <= 1, `溢出 ${info.overflow}px`);
+            check(`登入後 ${tag}：頂部按鈕與身分標籤都在畫面內`,
+                info.outside === 0, `${info.outside} 個凸出（登出鈕右緣 ${info.logout ? info.logout.right : '?'}）`);
+        }
+        await browser.evaluate(`document.querySelector('#langSwitch [data-lang="zh"]').click();
+            document.querySelector('#fontSwitch [data-font-value="m"]').click(); return true;`);
+        await sleep(250);
         await browser.setViewport(1360, 1000, false);
         await sleep(300);
 

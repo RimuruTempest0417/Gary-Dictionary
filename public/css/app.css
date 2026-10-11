@@ -60,6 +60,20 @@ code {
     -webkit-backdrop-filter: var(--blur);
     backdrop-filter: var(--blur);
     border-bottom: 1px solid var(--line);
+    /* ★ v0.13.2（使用者指定）：手機往下滑時收起頂部工具列、往上滑再顯示。
+     * 只有加上 .is-hidden 時才位移；桌機永遠不會被加上（見 app.js 的 initAutoHideTopbar）。 */
+    transition: transform 0.22s ease;
+    will-change: transform;
+}
+
+.topbar.is-hidden {
+    transform: translateY(-100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .topbar {
+        transition: none;
+    }
 }
 
 .topbar-inner {
@@ -146,6 +160,36 @@ code {
     display: flex;
     align-items: center;
     gap: var(--space-2);
+    /* ★ v0.13.2（使用者回報：登入後手機上「登出」凸出畫面）：
+     * 這裡在登入後會塞進「管理／身分籤／🔑／登出」四樣東西。
+     * 三道防線：① 允許換行 ② 允許被壓縮（min-width: 0，不然 flex 子項不會縮）
+     * ③ 最寬不超過容器。三件事都做了，極窄的手機也不可能溢出。 */
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    min-width: 0;
+    max-width: 100%;
+}
+
+/* ★ v0.13.2：最後一道防線 —— 頂部列的任何按鈕都不可以比容器寬（極窄手機／超長標籤）。 */
+.topbar .btn {
+    max-width: 100%;
+}
+
+/* ★ v0.13.2：身分標籤（顯示名稱 ＋ 角色）在窄螢幕要能被壓縮並省略，不能把列撐開。 */
+.topbar .user-chip {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-width: 0;
+    max-width: 100%;
+}
+
+.topbar .user-chip strong,
+.topbar .user-chip > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* 語言切換（EN / 中文）：小分段控制 */

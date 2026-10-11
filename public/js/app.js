@@ -1249,6 +1249,54 @@
     }
 
     /* ---------------- 啟動 ---------------- */
+
+    /* ★ v0.13.2（使用者指定）：手機往下滑時把頂部工具列收起來，往上滑才顯示。
+     * 為什麼：手機的頂部那一列（說明／主題／字級／語言／登入或管理）佔掉不少高度，
+     *        往下看生字表時就會一直被它擠掉內容。
+     * 規則：① 只在窄螢幕（≤640px）啟用 ② 回到最上面一定顯示
+     *      ③ 往上滑一定顯示（不會出現「想按按不到」的狀況）
+     *      ④ 搜尋框正在輸入時不收（正在打字把整個列收掉會嚇到人）。
+     * 用 rAF 節流：行動裝置的 scroll 事件很密集，不節流會掉格。 */
+    function initAutoHideTopbar() {
+        const bar = document.querySelector('.topbar');
+        if (!bar) return;
+        const narrow = window.matchMedia('(max-width: 640px)');
+        const THRESHOLD = 6;            /* 太小的抖動不要觸發，否則手稍微晃就忽隱忽現 */
+        const KEEP_TOP = 48;            /* 距離頂端這麼近時一律顯示 */
+        let lastY = window.scrollY;
+        let ticking = false;
+
+        function update() {
+            ticking = false;
+            const y = window.scrollY;
+            const delta = y - lastY;
+            const focusing = document.activeElement
+                && (document.activeElement.id === 'searchInput' || document.activeElement.closest('.topbar'));
+            if (!narrow.matches || y < KEEP_TOP || focusing) {
+                bar.classList.remove('is-hidden');
+            } else if (delta > THRESHOLD) {
+                bar.classList.add('is-hidden');
+            } else if (delta < -THRESHOLD) {
+                bar.classList.remove('is-hidden');
+            }
+            lastY = y;
+        }
+
+        window.addEventListener('scroll', () => {
+            if (ticking) return;
+            ticking = true;
+            window.requestAnimationFrame(update);
+        }, { passive: true });
+        /* 視窗變寬（例如轉橫放或改用桌機）→ 一定要把列還原，不能留在隱藏狀態 */
+        if (typeof narrow.addEventListener === 'function') {
+            narrow.addEventListener('change', () => {
+                if (!narrow.matches) bar.classList.remove('is-hidden');
+            });
+        }
+        /* 分頁切換（書架↔單元）時捲動位置會歸零 → 順手把列還原 */
+        window.addEventListener('pd:viewchange', () => bar.classList.remove('is-hidden'));
+    }
+
     async function boot() {
         const lang = window.PDI18n.init();
         document.querySelectorAll('#langSwitch [data-lang]').forEach((btn) => {
@@ -1256,6 +1304,7 @@
         });
         installCspRecorder();
         initAppearance();
+        initAutoHideTopbar();
         initKeyboard();
         await Promise.all([loadVersion(), loadHealth()]);
         try {

@@ -99,6 +99,13 @@
             ids: ['myListBtn', 'missingZhToggle'],
             covers: ['myListBtn', 'missingZhToggle']
         },
+        /* v0.13.2（F-5 之後）：手機上往下滑會收起頂部那一列，往上滑再出現 */
+        {
+            id: 'mobileScroll', audience: 'student',
+            title: 'guide.mobileScroll.title', steps: ['guide.mobileScroll.s1'],
+            ids: ['mainContent'],
+            covers: []
+        },
         {
             id: 'reviewBatch', audience: 'teacher',
             title: 'guide.reviewBatch.title', steps: ['guide.reviewBatch.s1', 'guide.reviewBatch.s2'],

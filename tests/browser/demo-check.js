@@ -875,6 +875,64 @@ async function main() {
         check('手機版（402px）沒有橫向溢出', mobileOverflow <= 1, `溢出 ${mobileOverflow}px`);
         const tinyButtons = await browser.evaluate(`return Array.from(document.querySelectorAll('.page button')).filter(b => b.getBoundingClientRect().width > 0 && b.getBoundingClientRect().height < 28).length;`);
         check('手機版沒有被壓成細條的按鈕', tinyButtons === 0, `${tinyButtons} 顆`);
+
+        /* ★ v0.13.2（使用者指定）：手機往下滑要收起頂部工具列、往上滑要顯示。
+         * 中／英 × A／A+ 四種組合都測（使用者要求「每次都要測中英文和兩種大小」）。
+         * 為什麼要墊高頁面：書架很短，不墊高就滑不動 ——
+         * 這裡量的是「捲動方向 → 工具列顯示／隱藏」這個行為，與頁面內容無關。
+         * ★ 用 <br> 填高而不是設定 style.height：本專案 CSP 是 style-src 'self'，
+         *   用 element.style 會被擋掉並產生 CSP 違規（這個套件會斷言違規 0 筆）。 */
+        const hideCombos = [
+            { lang: 'zh', font: 'm' }, { lang: 'zh', font: 'l' },
+            { lang: 'en', font: 'm' }, { lang: 'en', font: 'l' }
+        ];
+        for (const combo of hideCombos) {
+            await browser.evaluate(`document.querySelector('#langSwitch [data-lang="${combo.lang}"]').click();
+                document.querySelector('#fontSwitch [data-font-value="${combo.font}"]').click();
+                if (!window.__scrollFilled) {
+                    for (let i = 0; i < 400; i += 1) {
+                        const br = document.createElement('br');
+                        br.dataset.scrollFiller = '1';
+                        document.body.appendChild(br);
+                    }
+                    window.__scrollFilled = true;
+                }
+                window.scrollTo(0, 0);
+                return true;`);
+            await sleep(350);
+            const tag = `${combo.lang === 'zh' ? '中文' : '英文'}／字級${combo.font === 'l' ? 'A+' : 'A'}`;
+
+            await browser.evaluate(`window.scrollTo(0, 900); return true;`);
+            await sleep(450);
+            const hidden = await browser.evaluate(`return document.querySelector('.topbar').classList.contains('is-hidden');`);
+            check(`手機 ${tag}：往下滑會收起頂部工具列`, hidden === true);
+
+            await browser.evaluate(`window.scrollTo(0, 260); return true;`);
+            await sleep(450);
+            const shownBack = await browser.evaluate(`return !document.querySelector('.topbar').classList.contains('is-hidden');`);
+            check(`手機 ${tag}：往上滑會顯示回來`, shownBack === true);
+
+            await browser.evaluate(`window.scrollTo(0, 0); return true;`);
+            await sleep(400);
+            const topShown = await browser.evaluate(`return !document.querySelector('.topbar').classList.contains('is-hidden');`);
+            check(`手機 ${tag}：回到最上面一定顯示`, topShown === true);
+        }
+
+        /* 桌機寬度不該收起（工具列是常駐的）＋ 收尾：移除填充、還原英文與標準字級 */
+        await browser.setViewport(1360, 1000, false);
+        await sleep(300);
+        await browser.evaluate(`window.scrollTo(0, 900); return true;`);
+        await sleep(450);
+        const desktopHidden = await browser.evaluate(`return document.querySelector('.topbar').classList.contains('is-hidden');`);
+        check('桌機寬度：工具列不會被收起', desktopHidden === false);
+        await browser.evaluate(`
+            window.__scrollFilled = false;
+            document.querySelectorAll('[data-scroll-filler]').forEach((n) => n.remove());
+            document.querySelector('#langSwitch [data-lang="en"]').click();
+            document.querySelector('#fontSwitch [data-font-value="m"]').click();
+            window.scrollTo(0, 0);
+            return true;`);
+        await sleep(350);
         await browser.setViewport(1280, 950, false);
 
         const cspViolations = await browser.evaluate(`return window.__cspViolations || [];`);
