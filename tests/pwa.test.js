@@ -107,8 +107,37 @@ test('v0.14.2：Service Worker 的失敗路徑一定要回「真正的回應」�
 
 test('v0.14.2：離線頁本身不依賴任何外部資源（沒有網路時才看得到它）', () => {
     const offline = sw.slice(sw.indexOf('function offlineResponse'));
-    assert.ok(!/<script/i.test(offline), '離線頁不可以引用外部 script');
+    /* v0.14.3：離線頁現在內嵌一段自救程式（連續兩次就解除 Service Worker），
+     * 所以規則要精確到「不可以引用**外部**資源」，而不是「不可以有 script」。 */
+    assert.ok(!/<script[^>]+src=/i.test(offline), '離線頁不可以引用外部 script');
     assert.ok(!/<link/i.test(offline), '離線頁不可以引用外部樣式表');
+    assert.ok(!/https?:\/\//.test(offline.slice(offline.indexOf('<body>'))),
+        '離線頁的內容不可以有外部網址（沒有網路時才看得到它）');
     assert.match(offline, /<style>/, '樣式要內嵌（這個回應沒有加 CSP，行內樣式是安全的）');
     assert.match(offline, /location\.reload\(\)/, '要有一個「重新載入」的按鈕');
+});
+
+test('v0.14.3：Service Worker 不可以把「導覽請求」寫進快取（WebKit 會拋錯）', () => {
+    /* 真機症狀（使用者 iPhone）：重新載入一直只看到錯誤／離線頁。
+     * 原因之一是 cache.put() 對 mode:'navigate' 的請求在 WebKit 上會拋錯 →
+     * 導覽的回應必須直接回傳，不寫快取（離線靠 install 預先快取的首頁外殼）。 */
+    assert.match(sw, /request\.mode !== 'navigate'/,
+        'networkFirst 的 cache.put 必須排除導覽請求');
+    assert.match(sw, /await cache\.put\(request, response\.clone\(\)\)/,
+        'cache.put 必須被 await 並包在 try/catch 裡（不能留下未處理的 rejection）');
+    /* 不可以再出現「沒有包 try/catch 的裸 cache.put」 */
+    assert.ok(!/^\s*cache\.put\(request/m.test(sw),
+        '不可以有未包錯誤處理的裸 cache.put');
+});
+
+test('v0.14.3：離線頁要能自救（連續兩次就把 Service Worker 解除並重載）', () => {
+    const offline = sw.slice(sw.indexOf('function offlineResponse'));
+    assert.match(offline, /pd\.offlineHits/, '離線頁要有連續失敗計數器');
+    assert.match(offline, /getRegistrations\(\)/, '要能取得自己的 Service Worker 註冊');
+    assert.match(offline, /unregister\(\)/, '連續失敗時要解除註冊（使用者不可以被鎖在錯誤頁）');
+    assert.match(offline, /hits >= 2/, '門檻是連續兩次');
+
+    const app = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'app.js'), 'utf8');
+    assert.match(app, /removeItem\('pd\.offlineHits'\)/,
+        '頁面正常載入時要歸零計數器，否則零星斷線也會把 Service Worker 解除');
 });

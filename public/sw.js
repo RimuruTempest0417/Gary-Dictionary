@@ -14,7 +14,7 @@
  * ★ 改版時一定要改 CACHE_VERSION（`tests/pwa.test.js` 會檢查它與 package.json 的版本一致，
  *   忘記改的話測試會紅 —— 那正是「Service Worker 卡住舊版」這個經典問題的守門）。
  */
-const CACHE_VERSION = '0.14.2';
+const CACHE_VERSION = '0.14.3';
 const CACHE_NAME = `gary-dictionary-shell-${CACHE_VERSION}`;
 
 /* 預先快取「應用外殼」：離線時要能開起來的最小集合（頁面 ＋ 樣式 ＋ 主要腳本 ＋ 圖示）。
@@ -92,7 +92,25 @@ function offlineResponse() {
     <h1>暫時沒有網路</h1>
     <p>這個裝置現在連不上網路，而且這一頁還沒有存到離線快取。</p>
     <p class="en">No network connection, and this page has not been saved for offline use yet.</p>
-    <button onclick="location.reload()">重新載入 / Reload</button>
+    <button id="reloadBtn">重新載入 / Reload</button>
+    <script>
+        /* ★ v0.14.3：最後的自救機制 —— 離線頁連續出現兩次，就自己把 Service Worker 解除掉再重載。
+         * 為什麼要這個：Service Worker 裝在使用者的瀏覽器裡，我們無法從伺服器「關掉它」。
+         * 萬一某一版在特定裝置上出錯（真機上就遇到過：iOS Safari 導覽請求失敗），
+         * 這條路可以讓使用者永遠不會被鎖在錯誤頁 —— 代價只是離線快取重建。
+         * 這個回應沒有 CSP 標頭，所以行內 script 是允許的（一般頁面仍由 Express 的嚴格 CSP 保護）。 */
+        (function () {
+            var KEY = 'pd.offlineHits';
+            var hits = Number(sessionStorage.getItem(KEY) || '0') + 1;
+            sessionStorage.setItem(KEY, String(hits));
+            document.getElementById('reloadBtn').addEventListener('click', function () { location.reload(); });
+            if (hits >= 2 && navigator.serviceWorker) {
+                navigator.serviceWorker.getRegistrations().then(function (regs) {
+                    return Promise.all(regs.map(function (reg) { return reg.unregister(); }));
+                }).then(function () { location.reload(); }).catch(function () {});
+            }
+        })();
+    </script>
 </body>
 </html>`;
     return new Response(html, {
@@ -105,7 +123,17 @@ async function networkFirst(request) {
     const cache = await caches.open(CACHE_NAME);
     try {
         const response = await fetch(request);
-        if (response && response.ok) cache.put(request, response.clone());
+        /* ★ v0.14.3：**不要**把「導覽請求」的回應寫進快取。
+         * 為什麼：`cache.put()` 對 mode: 'navigate' 的請求在 WebKit（iOS Safari）上會拋錯，
+         * 而那不是我們能處理的錯誤 —— 真機實測會讓整頁變成錯誤／離線頁。
+         * 導覽一律走網路；離線時用預先快取的首頁外殼（見 install）。 */
+        if (response && response.ok && request.mode !== 'navigate') {
+            try {
+                await cache.put(request, response.clone());
+            } catch (err) {
+                /* 快取寫入失敗不影響這一次的回應（也絕不讓它變成未處理的 rejection） */
+            }
+        }
         return response;
     } catch (err) {
         /* 網路失敗 → 先看這一頁的快取，再看首頁外殼，最後給離線頁。絕不把錯誤往外丟。 */

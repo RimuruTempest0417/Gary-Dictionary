@@ -1302,6 +1302,11 @@
      * 註冊失敗（舊瀏覽器、無痕模式、公司網路擋掉）不會影響任何功能：離線是加分項，不是必要條件。 */
     function initServiceWorker() {
         if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
+        /* ★ v0.14.3：離線頁會用 sessionStorage 累計「連續出現幾次」；頁面一旦正常載入就清掉，
+         * 這樣那個計數器只代表「連續失敗」，不會因為零星一次斷線就把 Service Worker 解除掉。 */
+        try {
+            window.sessionStorage.removeItem('pd.offlineHits');
+        } catch (err) { /* 無痕模式可能禁止 sessionStorage：不影響功能 */ }
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('/sw.js').catch(() => { /* 靜靜放棄 */ });
         });
