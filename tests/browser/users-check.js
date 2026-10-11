@@ -613,6 +613,53 @@ async function main() {
         await browser.evaluate(`document.querySelector('#langSwitch [data-lang="zh"]').click();
             document.querySelector('#fontSwitch [data-font-value="m"]').click(); return true;`);
         await sleep(250);
+
+        /* ★ v0.14.1：使用者在真機上抓到「Record / upload 凸出卡片右緣」。
+         * 舊守門只量**頂部列**，所以漏掉生字卡裡的操作按鈕那一列 —— 這次把範圍擴大到
+         * 「整個單元頁的所有按鈕／輸入框／標籤」：中／英 × A／A+ × 320/375/402px，
+         * 任何一個控制項凸出畫面（右緣超過或左緣為負）都要紅。 */
+        await browser.evaluate(`if (!document.getElementById('adminSection').hidden) document.getElementById('adminToggleBtn').click(); return true;`);
+        await sleep(400);
+        await browser.evaluate(`document.querySelector('#bookShelf [data-book-id]').click(); return true;`);
+        await sleep(500);
+        await browser.evaluate(`document.querySelector('#unitList [data-unit-id]').click(); return true;`);
+        await sleep(800);
+        const pageMatrix = [];
+        for (const lang of ['zh', 'en']) {
+            for (const font of ['l', 'm']) {
+                for (const w of [320, 375, 402]) pageMatrix.push({ lang, font, w });
+            }
+        }
+        for (const combo of pageMatrix) {
+            await browser.evaluate(`document.querySelector('#langSwitch [data-lang="${combo.lang}"]').click();
+                document.querySelector('#fontSwitch [data-font-value="${combo.font}"]').click(); return true;`);
+            await browser.setViewport(combo.w, 874, true);
+            await sleep(320);
+            const pageInfo = await browser.evaluate(`
+                const nodes = [...document.querySelectorAll('#unitSection button, #unitSection label')];
+                const outside = nodes.map((node) => node.getBoundingClientRect())
+                    .filter((rect) => rect.width > 0 && (rect.right > window.innerWidth + 1 || rect.left < -1));
+                /* ★ 真正抓到 v0.14.1 那個症狀的量法：按鈕的文字被容器裁掉時，
+                 *   scrollWidth 會大於 clientWidth（「Record / upload」在白字不放行的按鈕裡被切掉）。
+                 *   只量「框有沒有凸出」是不夠的 —— max-width 會讓框乖乖在裡面，但字已經被裁。 */
+                const clipped = nodes.filter((node) => node.scrollWidth > node.clientWidth + 1);
+                return {
+                    outside: outside.length,
+                    clipped: clipped.length,
+                    clippedLabels: clipped.slice(0, 3).map((node) => (node.textContent || '').trim().slice(0, 24)),
+                    worst: outside.length ? Math.round(Math.max(...outside.map((rect) => rect.right))) : 0,
+                    overflow: document.documentElement.scrollWidth - window.innerWidth
+                };`);
+            const pageTag = `${combo.lang === 'zh' ? '中文' : '英文'}／字級${combo.font === 'l' ? 'A+' : 'A'}／${combo.w}px`;
+            check(`生字表 ${pageTag}：所有控制項都在畫面內`,
+                pageInfo.outside === 0, `${pageInfo.outside} 個凸出（最遠右緣 ${pageInfo.worst}）`);
+            check(`生字表 ${pageTag}：沒有任何按鈕的文字被裁掉`,
+                pageInfo.clipped === 0, `${pageInfo.clipped} 個被裁：${JSON.stringify(pageInfo.clippedLabels)}`);
+            check(`生字表 ${pageTag}：整頁不橫向溢出`, pageInfo.overflow <= 1, `溢出 ${pageInfo.overflow}px`);
+        }
+        await browser.evaluate(`document.querySelector('#langSwitch [data-lang="en"]').click();
+            document.querySelector('#fontSwitch [data-font-value="m"]').click(); return true;`);
+        await sleep(250);
         await browser.setViewport(1360, 1000, false);
         await sleep(300);
 

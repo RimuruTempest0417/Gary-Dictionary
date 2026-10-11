@@ -14,7 +14,7 @@
  * ★ 改版時一定要改 CACHE_VERSION（`tests/pwa.test.js` 會檢查它與 package.json 的版本一致，
  *   忘記改的話測試會紅 —— 那正是「Service Worker 卡住舊版」這個經典問題的守門）。
  */
-const CACHE_VERSION = '0.14.0';
+const CACHE_VERSION = '0.14.1';
 const CACHE_NAME = `gary-dictionary-shell-${CACHE_VERSION}`;
 
 /* 預先快取「應用外殼」：離線時要能開起來的最小集合（頁面 ＋ 樣式 ＋ 主要腳本 ＋ 圖示）。

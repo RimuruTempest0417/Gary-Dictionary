@@ -170,6 +170,12 @@ code {
     max-width: 100%;
 }
 
+/* ★ v0.14.1（使用者在真機上抓到「Record / upload 凸出卡片」後追加的全域防線）：
+ * 任何按鈕都不可以比它的容器寬。單點修好一個地方沒用 —— 這條讓「凸出」在整站都不可能發生。 */
+.btn {
+    max-width: 100%;
+}
+
 /* ★ v0.13.2：最後一道防線 —— 頂部列的任何按鈕都不可以比容器寬（極窄手機／超長標籤）。 */
 .topbar .btn {
     max-width: 100%;
@@ -1045,10 +1051,16 @@ code {
     .vocab-actions {
         flex-direction: row;
         width: 100%;
+        /* ★ v0.14.1（使用者在真機上抓到）：A+ 字級或中文標籤（「錄音／上傳」）比英文長時，
+         * 三顆操作按鈕塞不進一行 —— 沒有 flex-wrap 就只能凸出卡片右緣（畫面上看起來是被切掉）。
+         * 讓它可以換行，並允許按鈕壓縮，就不會再凸出去。 */
+        flex-wrap: wrap;
     }
 
     .vocab-actions .btn {
         flex: 1 1 auto;
+        min-width: 0;
+        max-width: 100%;
     }
 
     .audit-item {
