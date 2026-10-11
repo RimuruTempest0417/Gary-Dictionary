@@ -1297,6 +1297,16 @@
         window.addEventListener('pd:viewchange', () => bar.classList.remove('is-hidden'));
     }
 
+    /* ★ v0.14.0（F-2 加到主畫面）：註冊 Service Worker，讓「加到主畫面」之後離線也開得起來。
+     * 只在安全來源（https 或 localhost）才註冊 —— 這是瀏覽器的規定，不支援就靜靜跳過。
+     * 註冊失敗（舊瀏覽器、無痕模式、公司網路擋掉）不會影響任何功能：離線是加分項，不是必要條件。 */
+    function initServiceWorker() {
+        if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js').catch(() => { /* 靜靜放棄 */ });
+        });
+    }
+
     async function boot() {
         const lang = window.PDI18n.init();
         document.querySelectorAll('#langSwitch [data-lang]').forEach((btn) => {
@@ -1305,6 +1315,7 @@
         installCspRecorder();
         initAppearance();
         initAutoHideTopbar();
+        initServiceWorker();
         initKeyboard();
         await Promise.all([loadVersion(), loadHealth()]);
         try {

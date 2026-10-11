@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Gary-Dictionary">
+    <!-- app icon（maskable）：Android 會把它裁成圓形／水滴形，所以背景要鋪滿整個方形、
+         圖案只佔中間約 80%（安全區），被裁掉邊角時書本才不會缺一角。
+         iOS 的主畫面圖示也用這一張（iOS 不接受透明背景，鋪滿才不會出現黑邊）。 -->
+    <rect width="64" height="64" fill="#0071e3"/>
+    <path d="M20 19h17a7 7 0 0 1 7 7v19H27a7 7 0 0 1-7-7V19z" fill="#ffffff" opacity="0.95"/>
+    <path d="M27 19v26" stroke="#0071e3" stroke-width="2"/>
+    <path d="M31.5 29h9M31.5 36h9" stroke="#0071e3" stroke-width="2.6" stroke-linecap="round"/>
+</svg>

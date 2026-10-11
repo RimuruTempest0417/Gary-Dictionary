@@ -106,6 +106,13 @@
             ids: ['mainContent'],
             covers: []
         },
+        /* v0.14.0（F-2）：加到主畫面（手機像 App 一樣開、看過的頁面離線也進得去） */
+        {
+            id: 'pwa', audience: 'student',
+            title: 'guide.pwa.title', steps: ['guide.pwa.s1', 'guide.pwa.s2'],
+            ids: ['mainContent'],
+            covers: []
+        },
         {
             id: 'reviewBatch', audience: 'teacher',
             title: 'guide.reviewBatch.title', steps: ['guide.reviewBatch.s1', 'guide.reviewBatch.s2'],

@@ -95,6 +95,10 @@
             /* v0.13.2：手機上往下滑會收起頂部那一列（使用者指定） */
             'guide.mobileScroll.title': 'On a phone: more room for words',
             'guide.mobileScroll.s1': 'On a phone the top bar (Help, theme, text size, language, sign in) hides itself when you scroll down, so the word list gets the whole screen. Scroll back up (or return to the top of the page) and it comes back.',
+            /* v0.14.0（F-2）：加到主畫面 */
+            'guide.pwa.title': 'Add it to your home screen',
+            'guide.pwa.s1': 'iPhone (Safari): tap Share → “Add to Home Screen”. Android (Chrome): tap ⋮ → “Add to Home screen” / “Install app”. It then opens like an app, and pages you have already opened still work without a network.',
+            'guide.pwa.s2': 'The offline copy and your saved words (☆ My list) live on that device only — clearing the browser data removes them.',
             'guide.button': '❓ Help',
             'guide.title': '❓ How to use',
             'guide.print': '🖨 Print',
@@ -715,6 +719,10 @@
             /* v0.13.2：手機上往下滑會收起頂部那一列（使用者指定） */
             'guide.mobileScroll.title': '手機上：把畫面留給生字',
             'guide.mobileScroll.s1': '手機上往下滑時，最上面那一列（說明／主題／字級／語言／登入）會自動收起來，生字表就有整個畫面可以用；往上滑、或回到頁面最上面，它就會再出現。',
+            /* v0.14.0（F-2）：加到主畫面 */
+            'guide.pwa.title': '加到手機主畫面',
+            'guide.pwa.s1': 'iPhone（Safari）：按「分享」→「加入主畫面」。Android（Chrome）：按 ⋮ →「加到主畫面」／「安裝應用程式」。之後它會像 App 一樣打開，而且看過的頁面沒網路也進得去。',
+            'guide.pwa.s2': '離線副本與你收藏的生字（☆ 我的清單）都只存在這台裝置；清掉瀏覽器資料就會一起消失。',
             'guide.button': '❓ 使用說明',
             'guide.title': '❓ 使用說明',
             'guide.print': '🖨 列印',

@@ -1,0 +1,32 @@
+{
+    "name": "Gary-Dictionary — English Vocabulary Dictionary",
+    "short_name": "Gary-Dictionary",
+    "description": "線上英文生字字典：年級 → 單元 → 生字表，附讀音、詞性與中英解釋。",
+    "lang": "zh-Hant",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "any",
+    "background_color": "#f5f5f7",
+    "theme_color": "#0071e3",
+    "icons": [
+        {
+            "src": "/img/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/img/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/img/icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

@@ -130,7 +130,24 @@ function check(label, ok, detail) {
                 const stars = await browser.evaluate(`return document.querySelectorAll('#vocabList .star-btn').length;`);
                 check('生字卡有 ☆ 收藏鈕（F-5 我的清單）', stars > 0 || vocab.cards === 0, stars);
                 const workshop = await browser.evaluate(`return ['printBlankZh','printAlpha','myListBtn','missingZhToggle'].every((id) => Boolean(document.getElementById(id)));`);
-                check('列印學習單與學生端篩選的控制項都在（B-9／F-5）', workshop === true);
+        check('列印學習單與學生端篩選的控制項都在（B-9／F-5）', workshop === true);
+                /* v0.14.0（F-2）：加到主畫面的三件事在正式站要真的成立 */
+                const pwa = await browser.evaluate(`
+                    const manifest = document.querySelector('link[rel="manifest"]');
+                    const touch = document.querySelector('link[rel="apple-touch-icon"]');
+                    return {
+                        manifest: manifest ? manifest.getAttribute('href') : '',
+                        touch: touch ? touch.getAttribute('href') : ''
+                    };`);
+                check('有連到 manifest.json（F-2）', pwa.manifest === '/manifest.json', pwa.manifest);
+                check('apple-touch-icon 指向 PNG（iOS 需要，F-2）',
+                    pwa.touch.indexOf('/img/apple-touch-icon.png') === 0, pwa.touch);
+                const swReady = await browser.evaluate(`return navigator.serviceWorker
+                    ? navigator.serviceWorker.getRegistrations().then((list) => list.length) : -1;`);
+                check('Service Worker 已註冊（離線可用，F-2）', swReady >= 1, String(swReady));
+                const swScope = await browser.evaluate(`return navigator.serviceWorker.getRegistrations()
+                    .then((list) => (list[0] ? list[0].scope : ''));`);
+                check('Service Worker 的範圍涵蓋整個網站', String(swScope).endsWith('/'), String(swScope));
             } else {
                 console.log('  ⏭ 目錄沒有單元，跳過生字表檢查');
             }
